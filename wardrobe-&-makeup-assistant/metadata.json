@@ -1,0 +1,6 @@
+{
+  "name": "Wardrobe & Makeup Assistant",
+  "description": "一个全能智能衣柜与美妆穿搭管理助手，包含每日穿搭计划、拍照衣物录入及筛选、画板自由排版设计、AI一键智能穿搭、以及化妆品与妆容收纳管理。",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
