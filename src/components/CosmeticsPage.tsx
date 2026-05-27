@@ -1,5 +1,5 @@
 import { useState, ChangeEvent, FormEvent } from "react";
-import { Search, Sparkles, Camera, Trash2, Image as ImageIcon } from "lucide-react";
+import { Search, Sparkles, Camera, Image as ImageIcon } from "lucide-react";
 import { CosmeticItem, MakeupLook } from "../types";
 
 interface CosmeticsPageProps {
@@ -163,7 +163,7 @@ export default function CosmeticsPage({ cosmetics, makeupLooks, onAddCosmetic, o
                 <span className="absolute top-2 left-2 bg-white/90 text-[#111111] text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                   <Sparkles className="w-2.5 h-2.5" />妆容
                 </span>
-                <button onClick={(e) => { e.stopPropagation(); onRemoveMakeupLook(look.id); }} className="absolute top-2 right-2 p-1 rounded-full bg-white/80 hover:bg-[#C04040]/10 hover:text-[#C04040] text-[#AAAAAA] shadow-sm transition text-[10px]">×</button>
+                <button onClick={(e) => { e.stopPropagation(); onRemoveMakeupLook(look.id); }} className="absolute top-2 right-2 w-5 h-5 rounded-full bg-black/30 text-white flex items-center justify-center text-[10px] hover:bg-[#C04040] transition shadow-sm">×</button>
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent pt-6 pb-3 px-3">
                   <h3 className="text-[11px] font-bold text-white leading-tight line-clamp-1">{look.name}</h3>
                   <p className="text-[9px] text-white/70 line-clamp-1 mt-0.5">{look.description}</p>
@@ -185,7 +185,7 @@ export default function CosmeticsPage({ cosmetics, makeupLooks, onAddCosmetic, o
                 <div className="aspect-square bg-stone-50 relative overflow-hidden">
                   <img src={item.image} alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   <span className="absolute top-2 left-2 text-[9px] bg-white/90 text-[#111111] px-2 py-0.5 rounded-full font-bold">{item.category}</span>
-                  <button onClick={() => onRemoveCosmetic(item.id)} className="absolute bottom-2 right-2 px-2 py-1 rounded-full bg-white text-[#C04040] text-[9px] font-semibold shadow-sm border border-[#C04040]/20 hover:bg-[#C04040]/5 transition">删除</button>
+                  <button onClick={() => onRemoveCosmetic(item.id)} className="absolute top-2 right-2 w-5 h-5 rounded-full bg-black/30 text-white flex items-center justify-center text-[10px] hover:bg-[#C04040] transition shadow-sm">×</button>
                 </div>
                 <div className="p-3 space-y-2">
                   <span className="text-[10px] text-[#AAAAAA]">{item.brand}</span>

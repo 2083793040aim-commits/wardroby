@@ -1,5 +1,5 @@
 import { useState, ChangeEvent, FormEvent } from "react";
-import { Search, Camera, Trash2, Edit3, ArrowUpDown, Plus } from "lucide-react";
+import { Search, Camera, Trash2, Edit3, ArrowUpDown, Plus, Loader2 } from "lucide-react";
 import { ClothingItem } from "../types";
 
 interface WardrobePageProps {
@@ -31,6 +31,7 @@ export default function WardrobePage({ clothing, onAddClothing, onRemoveClothing
   const [newItemSize, setNewItemSize] = useState("M");
   const [newItemWarmth, setNewItemWarmth] = useState<number>(5);
   const [cameraCountdown, setCameraCountdown] = useState<number | null>(null);
+  const [isRemovingBg, setIsRemovingBg] = useState(false);
 
   const [customCategories, setCustomCategories] = useState<string[]>(() => {
     const saved = localStorage.getItem("couture_custom_categories");
@@ -69,12 +70,24 @@ export default function WardrobePage({ clothing, onAddClothing, onRemoveClothing
     }, 600);
   };
 
-  const handleLocalImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleLocalImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+    setIsRemovingBg(true);
+    try {
+      const { removeBackground: removeBg } = await import("@imgly/background-removal");
+      const blob = await removeBg(file, {
+        model: "isnet",
+        output: { format: "image/png" },
+      });
+      const url = URL.createObjectURL(blob);
+      setCapturedImage(url);
+    } catch {
       const reader = new FileReader();
       reader.onloadend = () => setCapturedImage(reader.result as string);
       reader.readAsDataURL(file);
+    } finally {
+      setIsRemovingBg(false);
     }
   };
 
@@ -196,9 +209,7 @@ export default function WardrobePage({ clothing, onAddClothing, onRemoveClothing
               <div className="aspect-[3/4] bg-[#F5F5F5] relative overflow-hidden">
                 <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
                 <span className="absolute top-2 left-2 text-[8px] font-semibold px-2 py-0.5 rounded-full bg-white/90 text-[#111111]">{item.season}季 - {item.category}</span>
-                <button onClick={() => onRemoveClothing(item.id)} className="absolute bottom-2 right-2 p-1.5 rounded-full bg-white hover:bg-[#C04040]/10 hover:text-[#C04040] text-[#AAAAAA] transition opacity-0 group-hover:opacity-100 shadow-md">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                <button onClick={() => onRemoveClothing(item.id)} className="absolute top-2 right-2 w-5 h-5 rounded-full bg-black/30 text-white flex items-center justify-center text-[10px] hover:bg-[#C04040] transition shadow-sm">×</button>
               </div>
               <div className="p-3 space-y-1.5">
                 <span className="text-[9px] text-[#AAAAAA] font-bold tracking-wide">{item.brand}</span>
@@ -238,8 +249,13 @@ export default function WardrobePage({ clothing, onAddClothing, onRemoveClothing
                 <label className="text-[10px] font-bold text-[#777777] uppercase tracking-wider block mb-1">照片录入</label>
                 {capturedImage ? (
                   <div className="relative aspect-[4/3] rounded-xl overflow-hidden border border-[#EBEBEB]">
+                    {isRemovingBg && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                        <Loader2 className="w-8 h-8 text-white animate-spin" />
+                      </div>
+                    )}
                     <img src={capturedImage} alt="Preview" className="w-full h-full object-cover" />
-                    <button type="button" onClick={() => setCapturedImage("")} className="absolute bottom-2 right-2 bg-black/80 text-white text-[9px] px-2.5 py-1 rounded-full">重新上传</button>
+                    <button type="button" onClick={() => setCapturedImage("")} className="absolute bottom-2 right-2 bg-black/80 text-white text-[9px] px-2.5 py-1 rounded-full z-20">重新上传</button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
@@ -253,9 +269,13 @@ export default function WardrobePage({ clothing, onAddClothing, onRemoveClothing
                         </>
                       )}
                     </button>
-                    <div className="aspect-[4/3] border border-dashed border-[#DDDDDD] rounded-xl bg-white flex flex-col items-center justify-center relative">
-                      <input type="file" accept="image/*" onChange={handleLocalImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
-                      <span className="text-[10px] text-[#777777]">本地照片</span>
+                    <div className={`aspect-[4/3] border border-dashed rounded-xl bg-white flex flex-col items-center justify-center relative ${isRemovingBg ? "border-[#111111]" : "border-[#DDDDDD]"}`}>
+                      <input type="file" accept="image/*" onChange={handleLocalImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" disabled={isRemovingBg} />
+                      {isRemovingBg ? (
+                        <Loader2 className="w-6 h-6 text-[#111111] animate-spin" />
+                      ) : (
+                        <span className="text-[10px] text-[#777777]">本地照片</span>
+                      )}
                     </div>
                   </div>
                 )}

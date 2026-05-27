@@ -38,6 +38,15 @@ export default function StudioPage({ clothing, outfits, makeupLooks, onAddOutfit
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
+  // Multi-touch pinch/rotate gesture state
+  const [pinchGesture, setPinchGesture] = useState<{
+    itemId: string;
+    initialDistance: number;
+    initialScale: number;
+    initialAngle: number;
+    initialRotate: number;
+  } | null>(null);
+
   // Canvas filters & save
   const [canvasCategory, setCanvasCategory] = useState("全部");
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -83,6 +92,54 @@ export default function StudioPage({ clothing, outfits, makeupLooks, onAddOutfit
 
   const handleCanvasClick = useCallback(() => {
     setActivePlacementId(null);
+  }, []);
+
+  // Multi-touch gesture helpers
+  const getTouchDistance = (t1: React.Touch, t2: React.Touch): number =>
+    Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+
+  const getTouchAngle = (t1: React.Touch, t2: React.Touch): number =>
+    Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * (180 / Math.PI);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2 && activePlacementId) {
+      const dist = getTouchDistance(e.touches[0], e.touches[1]);
+      const angle = getTouchAngle(e.touches[0], e.touches[1]);
+      const placement = canvasPlacements.find((p) => p.itemId === activePlacementId);
+      if (placement) {
+        setPinchGesture({
+          itemId: activePlacementId,
+          initialDistance: dist,
+          initialScale: placement.scale,
+          initialAngle: angle,
+          initialRotate: placement.rotate,
+        });
+      }
+    }
+  }, [activePlacementId, canvasPlacements]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!pinchGesture || e.touches.length !== 2) return;
+    e.preventDefault();
+    const dist = getTouchDistance(e.touches[0], e.touches[1]);
+    const angle = getTouchAngle(e.touches[0], e.touches[1]);
+    const scaleRatio = dist / pinchGesture.initialDistance;
+    const angleDelta = angle - pinchGesture.initialAngle;
+
+    setCanvasPlacements((prev) =>
+      prev.map((p) => {
+        if (p.itemId !== pinchGesture.itemId) return p;
+        return {
+          ...p,
+          scale: Math.max(0.5, Math.min(2.0, pinchGesture.initialScale * scaleRatio)),
+          rotate: Math.round(pinchGesture.initialRotate + angleDelta),
+        };
+      })
+    );
+  }, [pinchGesture]);
+
+  const handleTouchEnd = useCallback(() => {
+    setPinchGesture(null);
   }, []);
 
   const handleAiCurator = async () => {
@@ -378,7 +435,7 @@ export default function StudioPage({ clothing, outfits, makeupLooks, onAddOutfit
                 </div>
                 <button
                   onClick={() => onRemoveOutfit(out.id)}
-                  className="absolute top-2 right-2 w-5 h-5 rounded-full bg-black/40 text-white/80 flex items-center justify-center text-[10px] hover:bg-[#C04040] transition"
+                  className="absolute top-2 right-2 w-5 h-5 rounded-full bg-black/30 text-white flex items-center justify-center text-[10px] hover:bg-[#C04040] transition shadow-sm"
                 >×</button>
               </div>
             </div>
@@ -400,11 +457,15 @@ export default function StudioPage({ clothing, outfits, makeupLooks, onAddOutfit
           <div
             ref={canvasRef}
             className="flex-1 relative overflow-hidden"
-            style={{ background: canvasBackground.value, touchAction: draggingId ? "none" : "auto" }}
+            style={{ background: canvasBackground.value, touchAction: draggingId || pinchGesture ? "none" : "auto" }}
             onClick={handleCanvasClick}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
           >
             <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "radial-gradient(#111111 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
 
